@@ -1,10 +1,19 @@
 DATA_DIR=$1
-CALIB_1="${2}"
-CALIB_2="${3}"
+EXIT_CODE_FILE=$2
+if [ -z "${EXIT_CODE_FILE}" ]; then
+  EXIT_CODE_FILE="/dev/null"
+fi
+
+
+
+# Factory calibration: calibration.xml
+CALIB_1="${DATA_DIR}/calibration.xml"
+# Average calibration is in dataset folder after running download_avg_calib_datasets.m
+CALIB_2="${DATA_DIR}/average_calibration.xml"
 
 echo dataset: $DATA_DIR
-echo calibration file \#1: ${2}
-echo calibration file \#2: ${3}
+echo calibration file \#1: ${CALIB_1}
+echo calibration file \#2: ${CALIB_2}
 
 # Setup.
 PLANE_DIR="${DATA_DIR}/plane_test_output"
@@ -13,17 +22,19 @@ mkdir -p ${PLANE_DIR}
 ITER=1
 STEPS_PER_ITER=4
 NUM_ITERS=10
-PROGRESS_BAR=''
+PROGRESS_BAR="${DATA_DIR}  "
 PROGRESS_SUM=0
 PROGRESS_TOTAL=$((NUM_ITERS * STEPS_PER_ITER))
 PROGRESS_TOTAL="${PROGRESS_TOTAL}.0"
 RIGHT_COL=${PROGRESS_TOTAL}
 
 RED='\033[0;31m'
-NC='\033[0m'
+NO_COLOR='\033[0m'
 
-for iter in `seq 1 ${NUM_ITERS}`;
+. ~/redwood_ws/devel_linux/setup.sh
+for iter in `seq 1 ${NUM_ITERS}`
 do
+  echo starting.
   # Build output directories.
   ITER_DIR="${PLANE_DIR}/iter_${iter}"
   VIO_PLANE_1="${ITER_DIR}/vio_plane_1"
@@ -153,7 +164,8 @@ do
     ((COUNTER++))
   done
   if ((RETVAL != 0)); then
-    echo -e ${RED} ERROR 1: iteration ${iter} ${NC}
+    echo -e ${RED} ERROR 1: iteration ${iter} ${NO_COLOR}
+    echo "${DATA_DIR} 1" >> ${EXIT_CODE_FILE}
     exit 1
   fi
   (( PROGRESS_SUM++ ))
@@ -171,7 +183,8 @@ do
     ((COUNTER++))
   done
   if ((RETVAL != 0)); then
-    echo -e ${RED} ERROR 2:  iteration ${iter} ${NC}
+    echo -e ${RED} ERROR 2:  iteration ${iter} ${NO_COLOR}
+    echo "${DATA_DIR} 1" >> ${EXIT_CODE_FILE}
     exit 1
   fi
   (( PROGRESS_SUM++ ))
@@ -191,7 +204,8 @@ do
     ((COUNTER++))
   done
   if ((RETVAL != 0)); then
-    echo -e ${RED} ERROR 3:  iteration ${iter} ${NC}
+    echo -e ${RED} ERROR 3:  iteration ${iter} ${NO_COLOR}
+    echo "${DATA_DIR} 1" >> ${EXIT_CODE_FILE}
     exit 1
   fi
   (( PROGRESS_SUM++ ))
@@ -208,7 +222,7 @@ do
     ((COUNTER++))
   done
   if ((RETVAL != 0)); then
-    echo -e ${RED} ERROR 4:  iteration ${iter} ${NC}
+    echo -e ${RED} ERROR 4:  iteration ${iter} ${NO_COLOR}
     exit 1
   fi
   (( PROGRESS_SUM++ ))
@@ -221,138 +235,5 @@ done
 # matlab /r " VICON_DATA=${VICON_FILE}; TANGO_BASE_DIR=${TANGO_DIR}; PLANE_BASE_DIR=${OUTPUT_DIR}; ${MATLAB_SCRIPT}" > plane_compare.txt
 # cat plane_compare.txt
 echo
-echo Done!!
-#
-#
-#
-# # Build output directories.
-# VIO_PLANE_1="${DATA_DIR}/vio_plane_1"
-# VIO_PLANE_2="${DATA_DIR}/vio_plane_2"
-# COM_PLANE_1="${DATA_DIR}/com_plane_1"
-# COM_PLANE_2="${DATA_DIR}/com_plane_2"
-# mkdir -p ${VIO_PLANE_1} ${VIO_PLANE_2} ${COM_PLANE_1} ${COM_PLANE_2}
-#
-# VIO_TANGO_1="${DATA_DIR}/vio_tango_1"
-# VIO_TANGO_2="${DATA_DIR}/vio_tango_2"
-# COM_TANGO_1="${DATA_DIR}/com_tango_1"
-# COM_TANGO_2="${DATA_DIR}/com_tango_2"
-# mkdir -p ${VIO_TANGO_1} ${VIO_TANGO_2} ${COM_TANGO_1} ${COM_TANGO_2}
-#
-#
-# mkdir -p ${DATA_DIR}/vio_out_1
-#
-#
-#
-# # echo $?
-#
-# # Run VIO with first calibration file
-# desktop_vio --data_directory=${DATA_DIR} \
-# --calibration_file=${CALIB_1} \
-# --online_calibration_file=${CALIB_1} \
-# --cad_calibration_file=${CALIB_1} \
-# --log_pose_estimates_to_file=true \
-# --evaluation_log_directory=${VIO_TANGO_1} \
-# --rerun_feature_extraction_on_prerecorded_data=true \
-# --max_number_of_descriptors_to_extract=800 \
-# --scenegraph_visualize_vio_feature_position=true \
-# --use_stereo_motion_tracking=false \
-# --init_ts_sigma=1e-3 \
-# --use_glx_window_bit=false \
-# --random_generator_use_random_seed=false \
-# --random_generator_seed=111 \
-# --unique_id_use_random_seed=false \
-# --unique_id_seed=222 \
-# --skip_latent_feature_tracks=false \
-# --enable_vio_callback_for_feature_processing=false \
-# --disable_opengl=true \
-# --enable_plane_detection_from_vio=true \
-# --visualize_detected_planes=false \
-# --playback_mode StepByStep \
-# --plane_log_directory=${VIO_PLANE_1}
-#
-# echo Finished vio1 ${CALIB_1}
-#
-# # Run VIO with second calibration file
-# desktop_vio --data_directory=${DATA_DIR} \
-# --calibration_file=${CALIB_2} \
-# --online_calibration_file=${CALIB_2} \
-# --cad_calibration_file=${CALIB_2} \
-# --log_pose_estimates_to_file=true \
-# --evaluation_log_directory=${VIO_TANGO_2} \
-# --rerun_feature_extraction_on_prerecorded_data=true \
-# --max_number_of_descriptors_to_extract=800 \
-# --scenegraph_visualize_vio_feature_position=true \
-# --use_stereo_motion_tracking=false \
-# --init_ts_sigma=1e-3 \
-# --use_glx_window_bit=false \
-# --random_generator_use_random_seed=false \
-# --random_generator_seed=111 \
-# --unique_id_use_random_seed=false \
-# --unique_id_seed=222 \
-# --skip_latent_feature_tracks=false \
-# --enable_vio_callback_for_feature_processing=false \
-# --disable_opengl=true \
-# --enable_plane_detection_from_vio=true \
-# --visualize_detected_planes=false \
-# --playback_mode StepByStep \
-# --plane_log_directory=${VIO_PLANE_2}
-#
-# echo Finished vio2 ${CALIB_2}
-#
-# # Run COM with first calibration file
-# desktop_com --data_directory=${DATA_DIR} \
-# --calibration_file=${CALIB_1} \
-# --online_calibration_file=${CALIB_1} \
-# --cad_calibration_file=${CALIB_1} \
-# --log_pose_estimates_to_file=true \
-# --evaluation_log_directory=${COM_TANGO_1} \
-# --rerun_feature_extraction_on_prerecorded_data=true \
-# --max_number_of_descriptors_to_extract=800 \
-# --scenegraph_visualize_vio_feature_position=true \
-# --use_stereo_motion_tracking=false \
-# --init_ts_sigma=1e-3 \
-# --use_glx_window_bit=false \
-# --random_generator_use_random_seed=false \
-# --random_generator_seed=111 \
-# --unique_id_use_random_seed=false \
-# --VIWLS_execute_in_thread=false \
-# --unique_id_seed=222 \
-# --skip_latent_feature_tracks=false \
-# --enable_vio_callback_for_feature_processing=false \
-# --disable_opengl=true \
-# --enable_plane_detection_from_vio=true \
-# --visualize_detected_planes=false \
-# --playback_mode StepByStep \
-# --plane_log_directory=${COM_PLANE_1}
-#
-# echo Finished com1 ${CALIB_1}
-#
-# # Run COM with second calibration file
-# desktop_com --data_directory=${DATA_DIR} \
-# --calibration_file=${CALIB_2} \
-# --online_calibration_file=${CALIB_2} \
-# --cad_calibration_file=${CALIB_2} \
-# --log_pose_estimates_to_file=true \
-# --evaluation_log_directory=${COM_TANGO_2} \
-# --rerun_feature_extraction_on_prerecorded_data=true \
-# --max_number_of_descriptors_to_extract=800 \
-# --scenegraph_visualize_vio_feature_position=true \
-# --VIWLS_execute_in_thread=false \
-# --use_stereo_motion_tracking=false \
-# --init_ts_sigma=1e-3 \
-# --use_glx_window_bit=false \
-# --random_generator_use_random_seed=false \
-# --random_generator_seed=111 \
-# --unique_id_use_random_seed=false \
-# --unique_id_seed=222 \
-# --skip_latent_feature_tracks=false \
-# --enable_vio_callback_for_feature_processing=false \
-# --disable_opengl=true \
-# --enable_plane_detection_from_vio=true \
-# --visualize_detected_planes=false \
-# --playback_mode StepByStep \
-# --plane_log_directory=${COM_PLANE_2}
-#
-# echo Finished com2 ${CALIB_2}
-#
-# echo Done!
+# echo Done!!
+echo "${DATA_DIR} 0" >> ${EXIT_CODE_FILE}
