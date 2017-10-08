@@ -1,7 +1,7 @@
 DATA_DIR=$1
 EXIT_CODE_FILE=$2
 if [ -z "${EXIT_CODE_FILE}" ]; then
-  EXIT_CODE_FILE="/dev/null"
+  EXIT_CODE_FILE=1
 fi
 
 
@@ -31,10 +31,13 @@ RIGHT_COL=${PROGRESS_TOTAL}
 RED='\033[0;31m'
 NO_COLOR='\033[0m'
 
+SEED_FILE=seed_values.txt
+LOG_FILE=log_output.txt
+
 . ~/redwood_ws/devel_linux/setup.sh
 for iter in `seq 1 ${NUM_ITERS}`
 do
-  echo starting.
+  # echo starting.
   # Build output directories.
   ITER_DIR="${PLANE_DIR}/iter_${iter}"
   VIO_PLANE_1="${ITER_DIR}/vio_plane_1"
@@ -48,9 +51,18 @@ do
   COM_TANGO_1="${ITER_DIR}/com_tango_1"
   COM_TANGO_2="${ITER_DIR}/com_tango_2"
   mkdir -p ${VIO_TANGO_1} ${VIO_TANGO_2} ${COM_TANGO_1} ${COM_TANGO_2}
+
+
+
+  ## Get random seeds.
   SEED_1=`echo "import random; print random.randint(0,511)" | python`
   SEED_2=`echo "import random; print random.randint(512,1023)" | python`
+  echo "${SEED_1} ${SEED_2}" >> ${VIO_TANGO_1}/${SEED_FILE}
+  echo "${SEED_1} ${SEED_2}" >> ${VIO_TANGO_2}/${SEED_FILE}
+  echo "${SEED_1} ${SEED_2}" >> ${COM_TANGO_1}/${SEED_FILE}
+  echo "${SEED_1} ${SEED_2}" >> ${COM_TANGO_2}/${SEED_FILE}
 
+  ##  Build commands.
   # Run VIO with first calibration file
   COMMAND_1="desktop_vio --data_directory=${DATA_DIR} \
   --calibration_file=${CALIB_1} \
@@ -72,7 +84,8 @@ do
   --enable_vio_callback_for_feature_processing=false \
   --disable_opengl=true \
   --enable_plane_detection_from_vio=true \
-  --visualize_detected_planes=false \
+  --visualize_detected_planes=false \G_floor_ref.last_updated_timestamp == engine_data::INVALID_TIMESTAMP ||
+
   --playback_mode StepByStep \
   --plane_log_directory=${VIO_PLANE_1}"
 
@@ -94,7 +107,7 @@ do
   --unique_id_use_random_seed=false \
   --unique_id_seed=${SEED_2} \
   --skip_latent_feature_tracks=false \
-  --enable_vio_callback_for_feature_processing=false \
+  --enable_vio_callback_for_feature_processing=false \QUIETLY
   --disable_opengl=true \
   --enable_plane_detection_from_vio=true \
   --visualize_detected_planes=false \
@@ -138,7 +151,8 @@ do
   --max_number_of_descriptors_to_extract=800 \
   --scenegraph_visualize_vio_feature_position=true \
   --VIWLS_execute_in_thread=false \
-  --use_stereo_motion_tracking=false \
+  --use_stereo_motion_tracking=false \G_floor_ref.last_updated_timestamp == engine_data::INVALID_TIMESTAMP ||
+
   --init_ts_sigma=1e-3 \
   --use_glx_window_bit=false \
   --random_generator_use_random_seed=false \
@@ -146,7 +160,8 @@ do
   --unique_id_use_random_seed=false \
   --unique_id_seed=${SEED_2} \
   --skip_latent_feature_tracks=false \
-  --enable_vio_callback_for_feature_processing=true \
+  --enable_vio_callback_for_feature_processing=true \G_floor_ref.last_updated_timestamp == engine_data::INVALID_TIMESTAMP ||
+
   --disable_opengl=true \
   --enable_plane_detection_from_vio=true \
   --visualize_detected_planes=false \
@@ -159,7 +174,7 @@ do
   SAFETY=5
   until ((RETVAL == 0 || COUNTER >=SAFETY)); do
     echo ======================================= >> ${VIO_TANGO_1}/output.txt
-    $COMMAND_1  >> ${VIO_TANGO_1}/output.txt 2>&1
+    $COMMAND_1  >> ${VIO_TANGO_1}/${LOG_FILE} 2>&1
     RETVAL=$?
     ((COUNTER++))
   done
@@ -178,7 +193,7 @@ do
   COUNTER=0
   until ((RETVAL == 0 || COUNTER >=SAFETY)); do
     echo ======================================= >> ${VIO_TANGO_2}/output.txt
-    $COMMAND_2 >> ${VIO_TANGO_2}/output.txt 2>&1
+    $COMMAND_2 >> ${VIO_TANGO_2}/${LOG_FILE} 2>&1
     RETVAL=$?
     ((COUNTER++))
   done
@@ -199,7 +214,7 @@ do
   COUNTER=0
   until ((RETVAL == 0 || COUNTER >=SAFETY)); do
     echo ======================================= >> ${COM_TANGO_1}/output.txt
-    $COMMAND_3 >> ${COM_TANGO_1}/output.txt 2>&1
+    $COMMAND_3 >> ${COM_TANGO_1}/${LOG_FILE} 2>&1
     RETVAL=$?
     ((COUNTER++))
   done
@@ -217,7 +232,7 @@ do
   COUNTER=0
   until ((RETVAL == 0 || COUNTER >=SAFETY)); do
     echo ======================================= >> ${COM_TANGO_2}/output.txt
-    $COMMAND_4 >> ${COM_TANGO_2}/output.txt 2>&1
+    $COMMAND_4 >> ${COM_TANGO_2}/${LOG_FILE} 2>&1
     RETVAL=$?
     ((COUNTER++))
   done

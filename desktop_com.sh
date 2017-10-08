@@ -3,11 +3,12 @@ DATA_DIR=$1
 CALIB_DIR=${DATA_DIR}/calibration.xml
 CAD_CALIB_DIR=${DATA_DIR}/cad-calibration.xml
 ONLINE_CALIB_DIR=${DATA_DIR}/online-calibration.xml
+AVERAGE_CALIBRATION=${DATA_DIR}/average_calibration.xml
 
-desktop_vio --data_directory=${DATA_DIR} \
+desktop_com --data_directory=${DATA_DIR} \
 --calibration_file=${CALIB_DIR} \
---online_calibration_file=${ONLINE_CALIB_DIR} \
---cad_calibration_file=${CAD_CALIB_DIR} \
+--online_calibration_file=${CALIB_DIR} \
+--cad_calibration_file=${CALIB_DIR} \
 --log_pose_estimates_to_file=true \
 --evaluation_log_directory=${DATA_DIR}/out \
 --rerun_feature_extraction_on_prerecorded_data=true \

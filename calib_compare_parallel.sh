@@ -4,7 +4,8 @@
 #  $1 is the base data directory with the assumption that there are
 #  multiple datasets in immediate subdirectories.
 
-#  $2 is the max number of threads allowed.
+#  $2 is the max number of threads allowed.  My machine has 40 cores!
+#  I set this to 30 with no problems.
 
 #####  CALIB_COMPARE must be set for local machine.       <<<<<<<!!!!!!!!!
 
